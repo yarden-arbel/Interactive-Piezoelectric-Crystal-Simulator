@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Does a Piezoelectric Crystal Work? — Interactive Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1420; --panel:#161d2c; --panel-2:#1c2636; --line:#22303d; --line-soft:#1c2636;
+  --text:#eef1f6; --text-dim:#8793a8; --text-faint:#5b6b85;
+  --amber:#e8b64c; --amber-light:#f2c46d; --green:#7CFFB2; --red:#e05a4e; --teal:#1fb6a6;
+  --mono:'JetBrains Mono', ui-monospace, monospace; --sans:'Rubik', sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+::-webkit-scrollbar{width:8px;} ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+
+header{border-bottom:1px solid var(--line);padding:22px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand-mark{width:36px;height:36px;border:1.5px solid var(--amber);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--amber);flex-shrink:0;}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--amber);}
+h1{font-size:19px;font-weight:700;margin:2px 0 0;}
+.step-counter{font-family:var(--mono);font-size:12px;color:var(--text-dim);}
+
+main{max-width:1180px;margin:0 auto;padding:32px;display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+@media (max-width:920px){main{grid-template-columns:1fr;}}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;}
+.panel-label{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.readout{font-family:var(--mono);font-size:10.5px;color:var(--green);background:rgba(124,255,178,0.06);border:1px solid rgba(124,255,178,0.25);border-radius:6px;padding:5px 9px;}
+
+.scene-wrap{flex:1;min-height:300px;border-radius:12px;background:#0d1320;border:1px solid var(--line-soft);overflow:hidden;}
+svg{width:100%;height:100%;display:block;}
+
+.step-head{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.step-icon{width:40px;height:40px;border-radius:10px;background:rgba(232,182,76,0.1);border:1px solid rgba(232,182,76,0.4);display:flex;align-items:center;justify-content:center;color:var(--amber);flex-shrink:0;}
+.step-num{font-family:var(--mono);font-size:10px;color:var(--amber);}
+.step-title{font-size:17px;font-weight:700;line-height:1.2;}
+
+.explanation{
+  font-size:15px;line-height:1.85;color:#dfe6ee;flex:1;direction:rtl;text-align:right;
+}
+
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 16px;}
+.tab-btn{font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:999px;border:1px solid var(--line-soft);background:transparent;color:var(--text-dim);cursor:pointer;transition:.15s ease;}
+.tab-btn:hover{border-color:var(--amber);color:var(--amber);}
+.tab-btn.active{background:var(--amber);border-color:var(--amber);color:#0f1420;font-weight:700;}
+
+.nav-row{display:flex;align-items:center;gap:10px;}
+.nav-btn{display:flex;align-items:center;gap:8px;padding:11px 16px;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;border:1px solid var(--line-soft);background:transparent;color:var(--text);transition:.15s ease;}
+.nav-btn:hover:not(:disabled){border-color:var(--amber);color:var(--amber);}
+.nav-btn:disabled{opacity:.3;cursor:not-allowed;}
+.nav-btn.primary{margin-left:auto;background:var(--amber);border-color:var(--amber);color:#0f1420;}
+.nav-btn.primary:hover:not(:disabled){background:var(--amber-light);color:#0f1420;}
+
+.bone-wrap{max-width:1180px;margin:0 auto;padding:0 32px 40px;}
+.bone-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+.bone-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;background:none;border:none;cursor:pointer;color:var(--text);font-size:15px;font-weight:700;text-align:left;}
+.bone-chevron{color:var(--amber);transition:transform .3s ease;flex-shrink:0;}
+.bone-chevron.open{transform:rotate(180deg);}
+.bone-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s ease;}
+.bone-body.open{grid-template-rows:1fr;}
+.bone-body-inner{overflow:hidden;}
+.bone-text{padding:0 20px 20px;border-top:1px solid var(--line);padding-top:16px;font-size:14.5px;line-height:1.85;color:#c8d3e0;direction:rtl;text-align:right;}
+
+/* crystal + lattice animations */
+@keyframes floaty{0%,100%{transform:translateY(0px);}50%{transform:translateY(-6px);}}
+@keyframes dashflow{to{stroke-dashoffset:-32;}}
+@keyframes pulseArrow{0%,100%{opacity:1;}50%{opacity:.45;}}
+#crystalBox{transition:transform .7s cubic-bezier(.4,0,.2,1);}
+#crystalBox.floating{animation:floaty 3.5s ease-in-out infinite;}
+#pressureArrows{animation:pulseArrow 1.4s ease-in-out infinite;}
+.ion-shift{transition:transform .8s cubic-bezier(.4,0,.2,1);transform:translate(0,0);}
+#latticeGroup.shifted .ion-pos{transform:translate(9px,-6px);}
+#latticeGroup.shifted .ion-neg{transform:translate(-9px,6px);}
+.wire-dash{stroke-dasharray:6 10;animation:dashflow 1.1s linear infinite;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">⚡</div>
+    <div>
+      <div class="eyebrow">Interactive Simulator</div>
+      <h1>How Does a Piezoelectric Crystal Work?</h1>
+    </div>
+  </div>
+  <div class="step-counter" id="stepCounter">Step 1 of 5</div>
+</header>
+
+<main>
+  <!-- LEFT: visual simulation -->
+  <section class="panel">
+    <div class="panel-label">
+      <span>Visual Simulation</span>
+      <span class="readout" id="readout">Voltage: 0.00 V</span>
+    </div>
+    <div class="scene-wrap">
+      <svg id="scene" viewBox="0 0 420 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="crystalFront" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f2c46d"/><stop offset="100%" stop-color="#d99a2b"/>
+          </linearGradient>
+          <linearGradient id="crystalTop" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fbe3a8"/><stop offset="100%" stop-color="#f2c46d"/>
+          </linearGradient>
+          <linearGradient id="crystalSide" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#b87a1e"/><stop offset="100%" stop-color="#96631a"/>
+          </linearGradient>
+          <radialGradient id="ledGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#7CFFB2" stop-opacity="0.9"/><stop offset="100%" stop-color="#7CFFB2" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+        </defs>
+
+        <!-- background grid -->
+        <g opacity="0.12" stroke="#5b6b85" stroke-width="1" id="bgGrid"></g>
+
+        <!-- ===== MACRO SCENE ===== -->
+        <g id="macroGroup">
+          <g id="crystalBox" class="floating" style="transform-origin:210px 150px;">
+            <polygon points="270,120 300,95 300,175 270,205" fill="url(#crystalSide)"/>
+            <rect x="150" y="120" width="120" height="85" fill="url(#crystalFront)" rx="3"/>
+            <polygon points="150,120 180,95 300,95 270,120" fill="url(#crystalTop)"/>
+            <g id="chargeLabels" font-family="'JetBrains Mono',monospace" font-size="15" font-weight="700">
+              <text x="172" y="145" fill="#c0392b">+</text>
+              <text x="238" y="145" fill="#1b9e8f">&minus;</text>
+              <text x="172" y="188" fill="#1b9e8f">&minus;</text>
+              <text x="238" y="188" fill="#c0392b">+</text>
+            </g>
+          </g>
+
+          <g id="pressureArrows" style="display:none;">
+            <polygon points="118,150 138,140 138,160" fill="#93a5c4"/>
+            <line x1="90" y1="150" x2="138" y2="150" stroke="#93a5c4" stroke-width="4"/>
+            <polygon points="302,150 282,140 282,160" fill="#93a5c4"/>
+            <line x1="330" y1="150" x2="282" y2="150" stroke="#93a5c4" stroke-width="4"/>
+          </g>
+
+          <g id="wiresGroup" style="display:none;">
+            <path d="M 210 95 L 210 55 L 100 55 L 100 90" fill="none" stroke="#7d8fa3" stroke-width="3"/>
+            <path d="M 210 205 L 210 245 L 100 245 L 100 205" fill="none" stroke="#7d8fa3" stroke-width="3"/>
+            <path class="wire-dash" d="M 210 95 L 210 55 L 100 55 L 100 90" fill="none" stroke="#7CFFB2" stroke-width="3"/>
+            <path class="wire-dash" d="M 210 205 L 210 245 L 100 245 L 100 205" fill="none" stroke="#7CFFB2" stroke-width="3"/>
+            <circle cx="100" cy="150" r="26" fill="url(#ledGlow)" filter="url(#softBlur)"/>
+            <circle cx="100" cy="150" r="11" fill="#eafff2" stroke="#7CFFB2" stroke-width="2"/>
+            <line x1="100" y1="139" x2="100" y2="161" stroke="#2f9e63" stroke-width="1.4"/>
+            <g transform="translate(330,150)">
+              <path d="M -28 8 A 28 28 0 0 1 28 8" fill="none" stroke="#7d8fa3" stroke-width="2.5"/>
+              <line x1="0" y1="8" x2="18" y2="-16" stroke="#7CFFB2" stroke-width="2.5"/>
+              <circle cx="0" cy="8" r="2.5" fill="#7d8fa3"/>
+              <text x="0" y="30" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" fill="#9fb0c4">V</text>
+            </g>
+          </g>
+        </g>
+
+        <!-- ===== LATTICE SCENE ===== -->
+        <g id="latticeGroup" style="display:none;">
+          <g id="latticeBonds" stroke="#37475c" stroke-width="1" opacity="0.5"></g>
+          <g id="latticeIons"></g>
+          <g id="centerOverlap">
+            <circle cx="196.5" cy="124" r="4.5" fill="#f2c46d" stroke="#0f1420" stroke-width="1"/>
+            <text x="196.5" y="110" text-anchor="middle" font-size="10.5" fill="#c8d3e0" font-family="'JetBrains Mono',monospace">Charge centers overlap</text>
+          </g>
+          <g id="centerSeparated" style="display:none;">
+            <circle cx="205.5" cy="118" r="4.5" fill="#e05a4e"/>
+            <circle cx="187.5" cy="130" r="4.5" fill="#1fb6a6"/>
+            <line x1="187.5" y1="130" x2="205.5" y2="118" stroke="#f2c46d" stroke-width="2" stroke-dasharray="3 4"/>
+            <text x="196.5" y="156" text-anchor="middle" font-size="10.5" fill="#f2c46d" font-family="'JetBrains Mono',monospace">Electric dipole</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- RIGHT: explanation -->
+  <section class="panel">
+    <span class="panel-label">Explanation</span>
+    <div class="step-head">
+      <div class="step-icon" id="stepIcon">⚡</div>
+      <div>
+        <div class="step-num" id="stepNum">STEP 01</div>
+        <div class="step-title" id="stepTitle">Normal State</div>
+      </div>
+    </div>
+    <p class="explanation" id="explanation"></p>
+
+    <div class="tabs" id="tabs"></div>
+
+    <div class="nav-row">
+      <button class="nav-btn" id="backBtn">← Back</button>
+      <button class="nav-btn primary" id="nextBtn">Next →</button>
+    </div>
+  </section>
+</main>
+
+<div class="bone-wrap">
+  <div class="bone-panel">
+    <button class="bone-toggle" id="boneToggle">
+      <span>How Does This Effect Work in Our Bones During Movement?</span>
+      <span class="bone-chevron" id="boneChevron">⌄</span>
+    </button>
+    <div class="bone-body" id="boneBody">
+      <div class="bone-body-inner">
+        <p class="bone-text">
+          העצמות שלנו מכילות סיבי קולגן שהם למעשה חומר פיאזואלקטרי טבעי. כשאנחנו הולכים, רצים או מפעילים משקל
+          על העצם, הלחץ המכני יוצר זרמים חשמליים זעירים — בדיוק כמו בגביש הקוורץ שראינו למעלה. התופעה הזו היא
+          חלק מ"חוק וולף" (Wolff's Law), הקובע שעצם משתנה ומתחזקת בהתאם לעומס שמופעל עליה. הזרמים
+          הפיאזואלקטריים הקטנים משמשים כאיתות ביולוגי לתאים הבונים עצם — האוסטאובלסטים (osteoblasts) —
+          ומכוונים אותם להפקיד מינרלים בדיוק באזורים שבהם הלחץ המכני הכי גבוה. כך העצם "לומדת" להתחזק במקומות
+          שבהם היא הכי זקוקה לחוזק — וזו הסיבה שפעילות גופנית סדירה (הליכה, ריצה, אימוני התנגדות) משמרת ואף
+          מגבירה את צפיפות העצם, בעוד חוסר תנועה ממושך גורם לירידה מהירה בצפיפותה.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   STEP DATA — explanation stays Hebrew, everything else English
+============================================================ */
+const STEPS = [
+  { title:"Normal State", icon:"〰", readout:"Voltage: 0.00 V",
+    explanation:"במצב מנוחה, המטענים החיוביים והשליליים בתוך הגביש מאוזנים ומבטלים זה את זה. מרכז המטען החיובי ומרכז המטען השלילי חופפים בדיוק לאותה נקודה, ולכן הגביש כולו ניטרלי מבחוץ ואינו מייצר שום מתח חשמלי." },
+  { title:"Deformation State", icon:"⇄", readout:"Pressure applied — crystal compresses",
+    explanation:"כאשר מופעל על הגביש כוח מכני — לחיצה, כיפוף או מתיחה — הצורה החיצונית שלו משתנה: הוא נדחס, משתטח או מתעקל מעט. זהו שינוי גיאומטרי במבנה המאקרוסקופי, שעדיין לא חושף לנו מה קורה ברמת האטומים." },
+  { title:"Microscopic Zoom", icon:"⊛", readout:"Non-centrosymmetric lattice — charge centers overlap",
+    explanation:"בהתקרבות למבנה האטומי חושפים גביש פיאזואלקטרי בעל סריג לא-סימטרי (non-centrosymmetric) — סידור של יונים חיוביים ושליליים שאינו סימטרי סביב מרכז אחד, למרות שבמצב הרגיל מרכזי המטען עדיין חופפים בדיוק." },
+  { title:"Atomic Displacement", icon:"⊛", readout:"Charge centers separate — dipole forms",
+    explanation:"הלחץ המכני מזיז פיזית את היונים בתוך הסריג — כל שכבת יונים נעה מעט ביחס לשכנתה. השינוי הקטן הזה מספיק כדי שמרכז המטענים החיוביים ומרכז המטענים השליליים ייפרדו זה מזה, ונוצר דיפול חשמלי זעיר בתוך המבנה." },
+  { title:"Current Generation", icon:"⚡", readout:"Voltage: 3.7 V ⚡ current flows in circuit",
+    explanation:"כשמיליוני דיפולים כאלה נוצרים יחד בכל הגביש, מטען חיובי נצבר על פני שטח אחד ומטען שלילי על הפן הנגדי. הפרש הפוטנציאל (מתח) הזה, כשמחברים לגביש מוליכים חיצוניים, דוחף אלקטרונים לזרום במעגל — וכך נוצר זרם חשמלי אמיתי, שיכול להדליק נורית LED קטנה או להזיז מד-מתח." },
+];
+
+let step = 0;
+
+/* background grid */
+const bgGrid = document.getElementById('bgGrid');
+for(let i=0;i<=10;i++){ bgGrid.innerHTML += `<line x1="${i*42}" y1="0" x2="${i*42}" y2="300"/>`; }
+for(let i=0;i<=7;i++){ bgGrid.innerHTML += `<line x1="0" y1="${i*42}" x2="420" y2="${i*42}"/>`; }
+
+/* build lattice (24 ions, 4 rows x 6 cols) */
+const rows=4, cols=6, gapX=46, gapY=46, originX=70, originY=55;
+const ions = [];
+for(let r=0;r<rows;r++){
+  for(let c=0;c<cols;c++){
+    const positive = (r+c)%2===0;
+    const baseX = originX + c*gapX + (r%2===1 ? gapX/2 : 0);
+    const baseY = originY + r*gapY;
+    const skew = positive ? -3 : 3;
+    ions.push({ x: baseX+skew, y: baseY, positive, r, c });
+  }
+}
+const bondsG = document.getElementById('latticeBonds');
+const ionsG = document.getElementById('latticeIons');
+const svgNS = 'http://www.w3.org/2000/svg';
+
+ions.forEach((ion,i)=>{
+  const right = ions[i+1];
+  const below = ions[i+cols];
+  if(right && (i+1)%cols!==0){
+    const l = document.createElementNS(svgNS,'line');
+    l.setAttribute('x1',ion.x); l.setAttribute('y1',ion.y);
+    l.setAttribute('x2',right.x); l.setAttribute('y2',right.y);
+    bondsG.appendChild(l);
+  }
+  if(below){
+    const l = document.createElementNS(svgNS,'line');
+    l.setAttribute('x1',ion.x); l.setAttribute('y1',ion.y);
+    l.setAttribute('x2',below.x); l.setAttribute('y2',below.y);
+    bondsG.appendChild(l);
+  }
+});
+
+ions.forEach(ion=>{
+  const outer = document.createElementNS(svgNS,'g');
+  outer.setAttribute('transform',`translate(${ion.x},${ion.y})`);
+  const inner = document.createElementNS(svgNS,'g');
+  inner.setAttribute('class', 'ion-shift ' + (ion.positive ? 'ion-pos' : 'ion-neg'));
+  const circle = document.createElementNS(svgNS,'circle');
+  circle.setAttribute('r','9');
+  circle.setAttribute('fill', ion.positive ? '#e05a4e' : '#1fb6a6');
+  circle.setAttribute('opacity','0.92');
+  const text = document.createElementNS(svgNS,'text');
+  text.setAttribute('text-anchor','middle');
+  text.setAttribute('y','4');
+  text.setAttribute('font-family',"'JetBrains Mono',monospace");
+  text.setAttribute('font-size','11');
+  text.setAttribute('font-weight','700');
+  text.setAttribute('fill','#0f1420');
+  text.textContent = ion.positive ? '+' : '\u2212';
+  inner.appendChild(circle); inner.appendChild(text);
+  outer.appendChild(inner);
+  ionsG.appendChild(outer);
+});
+
+/* tabs */
+const tabsEl = document.getElementById('tabs');
+STEPS.forEach((s,i)=>{
+  const btn = document.createElement('button');
+  btn.className = 'tab-btn';
+  btn.textContent = String(i+1).padStart(2,'0');
+  btn.addEventListener('click', ()=>{ step=i; render(); });
+  tabsEl.appendChild(btn);
+});
+
+/* nav buttons */
+document.getElementById('backBtn').addEventListener('click', ()=>{ if(step>0){ step--; render(); } });
+document.getElementById('nextBtn').addEventListener('click', ()=>{ if(step<STEPS.length-1){ step++; render(); } });
+
+function render(){
+  const s = STEPS[step];
+  document.getElementById('stepCounter').textContent = `Step ${step+1} of ${STEPS.length}`;
+  document.getElementById('stepNum').textContent = `STEP ${String(step+1).padStart(2,'0')}`;
+  document.getElementById('stepTitle').textContent = s.title;
+  document.getElementById('stepIcon').textContent = s.icon;
+  document.getElementById('readout').textContent = s.readout;
+  document.getElementById('explanation').textContent = s.explanation;
+
+  document.querySelectorAll('.tab-btn').forEach((b,i)=> b.classList.toggle('active', i===step));
+  document.getElementById('backBtn').disabled = step===0;
+  document.getElementById('nextBtn').disabled = step===STEPS.length-1;
+
+  // visual mode: 0-1 macro, 2-3 lattice, 4 macro-with-current
+  const mode = step<2 ? 'macro' : step<4 ? 'lattice' : 'macro-current';
+  const deformed = step===1 || step===4;
+  const currentFlow = mode==='macro-current';
+  const shifted = step===3;
+
+  document.getElementById('macroGroup').style.display = mode==='lattice' ? 'none' : 'block';
+  document.getElementById('latticeGroup').style.display = mode==='lattice' ? 'block' : 'none';
+
+  const box = document.getElementById('crystalBox');
+  box.style.transform = deformed
+    ? 'translate(210px,150px) scale(0.86,1.1) translate(-210px,-150px)'
+    : 'translate(210px,150px) scale(1,1) translate(-210px,-150px)';
+  box.classList.toggle('floating', !deformed);
+
+  document.getElementById('chargeLabels').style.display = (mode==='macro' && !currentFlow) ? 'block' : 'none';
+  document.getElementById('pressureArrows').style.display = (step===1) ? 'block' : 'none';
+  document.getElementById('wiresGroup').style.display = currentFlow ? 'block' : 'none';
+
+  document.getElementById('latticeGroup').classList.toggle('shifted', shifted);
+  document.getElementById('centerOverlap').style.display = shifted ? 'none' : 'block';
+  document.getElementById('centerSeparated').style.display = shifted ? 'block' : 'none';
+}
+
+/* bone accordion */
+const boneToggle = document.getElementById('boneToggle');
+const boneBody = document.getElementById('boneBody');
+const boneChevron = document.getElementById('boneChevron');
+boneToggle.addEventListener('click', ()=>{
+  boneBody.classList.toggle('open');
+  boneChevron.classList.toggle('open');
+});
+
+render();
+</script>
+</body>
+</html>
